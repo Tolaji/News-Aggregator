@@ -1,19 +1,19 @@
 package com.myfirsteverapp.newsaggregator.presentation.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.myfirsteverapp.newsaggregator.presentation.screens.auth.AuthViewModel
 import com.myfirsteverapp.newsaggregator.presentation.screens.auth.LoginScreen
+import com.myfirsteverapp.newsaggregator.presentation.screens.auth.ProfileRoute
 import com.myfirsteverapp.newsaggregator.presentation.screens.auth.RegisterScreen
-import com.myfirsteverapp.newsaggregator.presentation.screens.detail.ArticleDetailScreen
 import com.myfirsteverapp.newsaggregator.presentation.screens.home.HomeScreen
 import com.myfirsteverapp.newsaggregator.presentation.screens.saved.SavedScreen
 
@@ -22,10 +22,8 @@ sealed class Screen(val route: String) {
     object Register : Screen("register")
     object Home : Screen("home")
     object Saved : Screen("saved")
+    object Profile : Screen("profile")
     object Search : Screen("search")
-    object ArticleDetail : Screen("article_detail/{articleId}") {
-        fun createRoute(articleId: String) = "article_detail/$articleId"
-    }
 }
 
 @Composable
@@ -34,6 +32,8 @@ fun NewsAggregatorNavGraph(
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.uiState.collectAsState()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     val startDestination = if (authState.isAuthenticated) {
         Screen.Home.route
@@ -41,66 +41,96 @@ fun NewsAggregatorNavGraph(
         Screen.Login.route
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
-        // Auth screens
-        composable(Screen.Login.route) {
-            LoginScreen(
-                onNavigateToRegister = {
-                    navController.navigate(Screen.Register.route)
-                },
-                onLoginSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+    // Routes that should show bottom navigation
+    val routesWithBottomNav = setOf(
+        Screen.Home.route,
+        Screen.Saved.route,
+        Screen.Profile.route
+    )
+
+    val showBottomNav = currentRoute in routesWithBottomNav
+
+    Scaffold(
+        bottomBar = {
+            if (showBottomNav) {
+                BottomNavigationBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            // Pop up to start destination to avoid building up stack
+                            popUpTo(Screen.Home.route) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
-                }
-            )
+                )
+            }
         }
-
-        composable(Screen.Register.route) {
-            RegisterScreen(
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                },
-                onRegisterSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = startDestination,
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            // Auth screens
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onNavigateToRegister = {
+                        navController.navigate(Screen.Register.route)
+                    },
+                    onLoginSuccess = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
 
-        // Main screens
-        composable(Screen.Home.route) {
-            HomeScreen(
-                onArticleClick = { article ->
-                    navController.navigate(Screen.ArticleDetail.createRoute(article.id))
-                },
-                onSearchClick = {
-                    navController.navigate(Screen.Search.route)
-                }
-            )
-        }
+            composable(Screen.Register.route) {
+                RegisterScreen(
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    },
+                    onRegisterSuccess = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Register.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
 
-        composable(Screen.Saved.route) {
-            SavedScreen(
-                onArticleClick = { article ->
-                    navController.navigate(Screen.ArticleDetail.createRoute(article.id))
-                }
-            )
-        }
+            // Main screens with bottom nav
+            composable(Screen.Home.route) {
+                HomeScreen(
+                    onArticleClick = { article ->
+                        // For now, just log - we'll implement detail screen next
+                        println("Clicked article: ${article.title}")
+                    },
+                    onSearchClick = {
+                        // Navigate to search if implemented
+                    }
+                )
+            }
 
-        composable(
-            route = Screen.ArticleDetail.route,
-            arguments = listOf(
-                navArgument("articleId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val articleId = backStackEntry.arguments?.getString("articleId")
-            // You would fetch article by ID here
-            // For simplicity, passing from previous screen or cache
+            composable(Screen.Saved.route) {
+                SavedScreen(
+                    onArticleClick = { article ->
+                        println("Clicked saved article: ${article.title}")
+                    }
+                )
+            }
+
+            composable(Screen.Profile.route) {
+                ProfileRoute(
+                    onSignedOut = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
     }
 }
