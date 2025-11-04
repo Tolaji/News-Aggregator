@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "717862283515",
+    "firebase_url": "https://weflut-live.firebaseio.com",
+    "project_id": "weflut-live",
+    "storage_bucket": "weflut-live.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:717862283515:android:1830e90d4382952716685e",
+        "android_client_info": {
+          "package_name": "com.myfirsteverapp.newsaggregator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDilfbyQ8NON0fPvnH6g1Ao4u-64FVrVog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

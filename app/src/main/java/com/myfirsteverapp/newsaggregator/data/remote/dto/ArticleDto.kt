@@ -1,0 +1,27 @@
+package com.myfirsteverapp.newsaggregator.data.remote.dto
+
+import com.google.gson.annotations.SerializedName
+
+// Data class demonstrating Kotlin requirement
+data class NewsResponseDto(
+    val status: String,
+    val totalResults: Int,
+    val articles: List<ArticleDto>
+)
+
+data class ArticleDto(
+    val source: SourceDto,
+    val author: String?,
+    val title: String,
+    val description: String?,
+    val url: String,
+    @SerializedName("urlToImage")
+    val imageUrl: String?,
+    val publishedAt: String,
+    val content: String?
+)
+
+data class SourceDto(
+    val id: String?,
+    val name: String
+)

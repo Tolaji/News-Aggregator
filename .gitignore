@@ -23,8 +23,13 @@ build/
 *.ipr
 *.iws
 
-# Local configuration
+# API Keys
 local.properties
+google-services.json
+
+# Sensitive files
+*.jks
+*.keystore
 
 # Log files
 *.log
