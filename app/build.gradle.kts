@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,8 +7,6 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.dagger.hilt.android")
     kotlin("kapt")
-//    id("com.android.application")
-//    id("com.google.gms.google-services")
 }
 
 android {
@@ -22,9 +22,19 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Add BuildConfig fields
-        buildConfigField("String", "NEWS_API_KEY", "\"${project.findProperty("NEWS_API_KEY")}\"")
+        // CRITICAL FIX: Read API key from local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
+
+        val newsApiKey = localProperties.getProperty("NEWS_API_KEY") ?: ""
+        buildConfigField("String", "NEWS_API_KEY", "\"$newsApiKey\"")
         buildConfigField("String", "NEWS_API_BASE_URL", "\"https://newsapi.org/v2/\"")
+
+        // Debug: Print to verify (remove after testing)
+        println("🔑 NEWS_API_KEY loaded: ${if (newsApiKey.isNotEmpty()) "✅ ${newsApiKey.take(10)}..." else "❌ EMPTY"}")
     }
 
     buildTypes {
@@ -120,12 +130,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("app.cash.turbine:turbine:1.0.0")
-
-   // Mockito for Kotlin
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.mockito:mockito-core:4.11.0")
-
-    // Optional: enable inline mocking for final classes (useful in Kotlin)
     testImplementation("org.mockito:mockito-inline:4.11.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
