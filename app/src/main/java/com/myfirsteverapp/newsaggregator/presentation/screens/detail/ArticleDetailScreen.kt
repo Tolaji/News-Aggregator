@@ -121,8 +121,10 @@ fun ArticleDetailScreen(
                     )
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
-
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
                 Text(
                     text = article.content,
                     style = MaterialTheme.typography.bodyLarge,

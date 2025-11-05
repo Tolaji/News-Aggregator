@@ -26,5 +26,5 @@ plugins {
     // It is highly recommended to use the latest stable Kotlin version (currently 2.0.0 or higher)
     // in your Version Catalog or explicit declaration for optimal performance.
     // If you are using the Kotlin 2.0.0 compiler, you must use the 2.0.0 plugin version.
-    id("org.jetbrains.kotlin.jvm") version "2.0.0" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.9.23" apply false
 }

@@ -6,6 +6,7 @@ import retrofit2.http.Query
 
 interface NewsApiService {
 
+    // Existing endpoints
     @GET("top-headlines")
     suspend fun getTopHeadlines(
         @Query("country") country: String = "us",
@@ -30,5 +31,32 @@ interface NewsApiService {
         @Query("q") category: String,
         @Query("apiKey") apiKey: String,
         @Query("pageSize") pageSize: Int = 20
+    ): NewsResponseDto
+
+    // NEW: Add the specific endpoints you requested
+    @GET("everything")
+    suspend fun getEverythingNews(
+        @Query("q") query: String,
+        @Query("from") from: String,
+        @Query("sortBy") sortBy: String = "popularity",
+        @Query("apiKey") apiKey: String,
+        @Query("pageSize") pageSize: Int = 20,
+        @Query("page") page: Int = 1
+    ): NewsResponseDto
+
+    @GET("top-headlines")
+    suspend fun getTopHeadlinesByCountry(
+        @Query("country") country: String = "us",
+        @Query("apiKey") apiKey: String,
+        @Query("pageSize") pageSize: Int = 20,
+        @Query("page") page: Int = 1
+    ): NewsResponseDto
+
+    @GET("top-headlines")
+    suspend fun getTopHeadlinesBySource(
+        @Query("sources") sources: String,
+        @Query("apiKey") apiKey: String,
+        @Query("pageSize") pageSize: Int = 20,
+        @Query("page") page: Int = 1
     ): NewsResponseDto
 }

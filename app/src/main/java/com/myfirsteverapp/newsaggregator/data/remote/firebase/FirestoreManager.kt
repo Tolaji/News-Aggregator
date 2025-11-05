@@ -137,13 +137,20 @@ class FirestoreManager @Inject constructor(
                 .await()
 
             if (doc.exists()) {
-                val prefs = UserPreferences(
-                    favoriteCategories = (doc.get("favoriteCategories") as? List<String>)
-                        ?.mapNotNull {
+                val favoriteCategoriesList = doc.get("favoriteCategories")
+                val favoriteCategories = if (favoriteCategoriesList is List<*>) {
+                    favoriteCategoriesList.filterIsInstance<String>()
+                        .mapNotNull {
                             try {
                                 com.myfirsteverapp.newsaggregator.domain.model.Category.valueOf(it)
                             } catch (e: Exception) { null }
-                        } ?: emptyList(),
+                        }
+                } else {
+                    emptyList()
+                }
+
+                val prefs = UserPreferences(
+                    favoriteCategories = favoriteCategories,
                     notificationsEnabled = doc.getBoolean("notificationsEnabled") ?: true,
                     darkModeEnabled = doc.getBoolean("darkModeEnabled") ?: false,
                     autoRefresh = doc.getBoolean("autoRefresh") ?: true

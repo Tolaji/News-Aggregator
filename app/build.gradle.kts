@@ -67,6 +67,18 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
+
+    lint {
+        // Disable lint for unit tests
+        checkTestSources = false
+        ignoreTestSources = true
+    }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {

@@ -81,7 +81,10 @@ fun HomeScreen(
                     }
                 }
 
-                Divider()
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
 
                 // Content
                 when {
