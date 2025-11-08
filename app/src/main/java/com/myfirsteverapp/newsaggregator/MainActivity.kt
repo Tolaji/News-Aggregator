@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.myfirsteverapp.newsaggregator.presentation.navigation.NewsAggregatorNavGraph
+import androidx.navigation.compose.rememberNavController
+import com.myfirsteverapp.newsaggregator.presentation.navigation.NavGraph
+import com.myfirsteverapp.newsaggregator.presentation.navigation.Screen
 import com.myfirsteverapp.newsaggregator.ui.theme.NewsAggregatorTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -24,7 +26,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NewsAggregatorNavGraph()
+                    val navController = rememberNavController()
+                    NavGraph(
+                        navController = navController,
+                        startDestination = Screen.Splash.route
+                    )
                 }
             }
         }

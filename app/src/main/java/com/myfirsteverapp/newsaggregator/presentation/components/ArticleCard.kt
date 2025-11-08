@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -27,16 +28,16 @@ fun ArticleCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Image
-            article.imageUrl?.let { imageUrl ->
+            // Article Image
+            if (article.urlToImage.isNotEmpty()) {
                 AsyncImage(
-                    model = imageUrl,
-                    contentDescription = article.title,
+                    model = article.urlToImage,
+                    contentDescription = "Article Image",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
@@ -45,44 +46,45 @@ fun ArticleCard(
                 )
             }
 
-            // Content
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Title
                 Text(
                     text = article.title,
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = article.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Description
+                if (article.description.isNotEmpty()) {
+                    Text(
+                        text = article.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
+                // Footer: Source, Date, Bookmark
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = article.source.name,
+                            text = article.source,
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = article.getTimeAgo(),
+                            text = formatPublishedDate(article.publishedAt),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -90,22 +92,48 @@ fun ArticleCard(
 
                     IconButton(onClick = onBookmarkClick) {
                         Icon(
-                            imageVector = if (article.isBookmarked)
+                            imageVector = if (article.isBookmarked) {
                                 Icons.Default.Bookmark
-                            else
-                                Icons.Default.BookmarkBorder,
-                            contentDescription = if (article.isBookmarked)
-                                "Remove bookmark"
-                            else
-                                "Add bookmark",
-                            tint = if (article.isBookmarked)
+                            } else {
+                                Icons.Default.BookmarkBorder
+                            },
+                            contentDescription = "Bookmark",
+                            tint = if (article.isBookmarked) {
                                 MaterialTheme.colorScheme.primary
-                            else
+                            } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                     }
                 }
             }
         }
+    }
+}
+
+private fun formatPublishedDate(dateString: String): String {
+    return try {
+        // Simple time ago formatter
+        // In production, use proper date/time library
+        val now = System.currentTimeMillis()
+        val publishedTime = java.text.SimpleDateFormat(
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            java.util.Locale.getDefault()
+        ).parse(dateString)?.time ?: return dateString
+
+        val diff = now - publishedTime
+        val seconds = diff / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+
+        when {
+            days > 0 -> "${days}d ago"
+            hours > 0 -> "${hours}h ago"
+            minutes > 0 -> "${minutes}m ago"
+            else -> "Just now"
+        }
+    } catch (e: Exception) {
+        dateString
     }
 }
