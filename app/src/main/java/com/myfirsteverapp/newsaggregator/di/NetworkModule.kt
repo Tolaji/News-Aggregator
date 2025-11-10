@@ -1,7 +1,7 @@
 package com.myfirsteverapp.newsaggregator.di
 
 import com.myfirsteverapp.newsaggregator.BuildConfig
-import com.myfirsteverapp.newsaggregator.data.remote.api.NewsApiService
+import com.myfirsteverapp.newsaggregator.data.remote.NewsApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,6 +29,21 @@ object NetworkModule {
         }
 
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val originalRequest = chain.request()
+                val originalUrl = originalRequest.url
+
+                // Add API key to all requests
+                val newUrl = originalUrl.newBuilder()
+                    .addQueryParameter("apiKey", BuildConfig.NEWS_API_KEY)
+                    .build()
+
+                val newRequest = originalRequest.newBuilder()
+                    .url(newUrl)
+                    .build()
+
+                chain.proceed(newRequest)
+            }
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

@@ -188,7 +188,6 @@ fun ArticleDetailScreen(
 
 private fun formatDate(dateString: String): String {
     return try {
-        // Simple formatting - enhance with actual date parsing
         val date = dateString.split("T")[0]
         val parts = date.split("-")
         if (parts.size == 3) {

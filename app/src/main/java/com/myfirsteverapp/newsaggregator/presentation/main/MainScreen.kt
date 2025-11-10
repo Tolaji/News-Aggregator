@@ -14,7 +14,7 @@ import com.myfirsteverapp.newsaggregator.domain.model.Article
 import com.myfirsteverapp.newsaggregator.presentation.factcheck.FactCheckScreen
 import com.myfirsteverapp.newsaggregator.presentation.screens.home.HomeScreen
 import com.myfirsteverapp.newsaggregator.presentation.navigation.BottomNavItem
-import com.myfirsteverapp.newsaggregator.presentation.screens.profile.ProfileScreen
+import com.myfirsteverapp.newsaggregator.presentation.profile.ProfileScreen
 import com.myfirsteverapp.newsaggregator.presentation.saved.SavedScreen
 
 @OptIn(ExperimentalMaterial3Api::class)

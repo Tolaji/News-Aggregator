@@ -1,10 +1,10 @@
-buildscript {
-    dependencies {
-        classpath("com.google.gms:google-services:4.4.0")
-        classpath("com.google.dagger:hilt-android-gradle-plugin:2.50")
-
-    }
-}
+//buildscript {
+//    dependencies {
+//        classpath("com.google.gms:google-services:4.4.0")
+//        classpath("com.google.dagger:hilt-android-gradle-plugin:2.50")
+//
+//    }
+//}
 
 // 1. Plugins Block: All plugins and their versions should be defined here,
 //    eliminating the need for the deprecated 'buildscript/dependencies' block.

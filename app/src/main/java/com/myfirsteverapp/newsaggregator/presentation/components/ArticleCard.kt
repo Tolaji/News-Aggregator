@@ -114,7 +114,6 @@ fun ArticleCard(
 private fun formatPublishedDate(dateString: String): String {
     return try {
         // Simple time ago formatter
-        // In production, use proper date/time library
         val now = System.currentTimeMillis()
         val publishedTime = java.text.SimpleDateFormat(
             "yyyy-MM-dd'T'HH:mm:ss'Z'",

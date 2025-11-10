@@ -1,72 +1,54 @@
-package com.myfirsteverapp.newsaggregator.presentation.screens.saved
+package com.myfirsteverapp.newsaggregator.presentation.saved
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.myfirsteverapp.newsaggregator.data.repository.SavedArticlesRepository
 import com.myfirsteverapp.newsaggregator.domain.model.Article
+import com.myfirsteverapp.newsaggregator.domain.repository.NewsRepository
 import com.myfirsteverapp.newsaggregator.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class SavedUiState(
-    val articles: List<Article> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
-
 @HiltViewModel
 class SavedViewModel @Inject constructor(
-    private val repository: SavedArticlesRepository
+    private val newsRepository: NewsRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SavedUiState())
-    val uiState: StateFlow<SavedUiState> = _uiState.asStateFlow()
+    private val _savedArticles = MutableStateFlow<Resource<List<Article>>>(Resource.Loading())
+    val savedArticles: StateFlow<Resource<List<Article>>> = _savedArticles.asStateFlow()
 
     init {
         loadSavedArticles()
     }
 
-    private fun loadSavedArticles() {
+    fun loadSavedArticles() {
         viewModelScope.launch {
-            repository.getSavedArticles().collect { resource ->
-                when (resource) {
-                    is Resource.Loading -> {
-                        _uiState.update { it.copy(isLoading = true, error = null) }
-                    }
-                    is Resource.Success -> {
-                        _uiState.update {
-                            it.copy(
-                                articles = resource.data ?: emptyList(),
-                                isLoading = false,
-                                error = null
-                            )
-                        }
-                    }
-                    is Resource.Error -> {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                error = resource.message
-                            )
-                        }
-                    }
+            try {
+                _savedArticles.value = Resource.Loading()
+                newsRepository.getBookmarkedArticles().collect { articles ->
+                    _savedArticles.value = Resource.Success(articles)
                 }
+            } catch (e: Exception) {
+                _savedArticles.value = Resource.Error(e.localizedMessage ?: "Failed to load saved articles")
             }
         }
     }
 
-    fun deleteArticle(article: Article) {
+    fun toggleBookmark(article: Article) {
         viewModelScope.launch {
-            repository.deleteArticle(article.id)
-            // State updates automatically via Flow
-        }
-    }
+            newsRepository.removeBookmark(article)
 
-    fun markAsRead(article: Article) {
-        viewModelScope.launch {
-            repository.updateReadStatus(article.id, true)
+            // Update the list immediately
+            _savedArticles.value = when (val current = _savedArticles.value) {
+                is Resource.Success -> {
+                    val updatedList = current.data?.filter { it.url != article.url }
+                    Resource.Success(updatedList)
+                }
+                else -> current
+            }
         }
     }
 }
