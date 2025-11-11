@@ -37,23 +37,6 @@ fun MainScreen(
     )
 
     Scaffold(
-        topBar = {
-            if (currentRoute == BottomNavItem.Home.route) {
-                TopAppBar(
-                    title = { Text("News Aggregator") },
-                    actions = {
-                        IconButton(onClick = onSearchClick) {
-                            Icon(Icons.Default.Search, "Search")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                )
-            }
-        },
         bottomBar = {
             NavigationBar {
                 bottomNavItems.forEach { item ->
