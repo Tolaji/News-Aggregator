@@ -1,4 +1,4 @@
-package com.myfirsteverapp.newsaggregator.presentation.saved
+package com.myfirsteverapp.newsaggregator.presentation.screens.saved
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,7 +44,7 @@ class SavedViewModel @Inject constructor(
             // Update the list immediately
             _savedArticles.value = when (val current = _savedArticles.value) {
                 is Resource.Success -> {
-                    val updatedList = current.data?.filter { it.url != article.url }
+                    val updatedList = current.data?.filter { it.url != article.url } ?: emptyList()
                     Resource.Success(updatedList)
                 }
                 else -> current

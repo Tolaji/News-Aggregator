@@ -93,6 +93,10 @@ class HomeViewModel @Inject constructor(
                             )
                         }
                     }
+                    else -> {
+                        // Handle any other possible states
+                        Log.w(TAG, "❓ Unknown resource state: $resource")
+                    }
                 }
             }
         }

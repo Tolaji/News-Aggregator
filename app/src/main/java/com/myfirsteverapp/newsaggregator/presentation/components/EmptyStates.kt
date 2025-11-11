@@ -3,6 +3,7 @@ package com.myfirsteverapp.newsaggregator.presentation.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Newspaper
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -153,7 +154,7 @@ fun EmptySearchHistory() {
 @Composable
 fun EmptyNewsResults() {
     EmptyState(
-        icon = Icons.Default.NewspaperOutlined,
+        icon = Icons.Outlined.Newspaper,
         title = "No news available",
         description = "We couldn't find any articles at the moment. Please try again later."
     )

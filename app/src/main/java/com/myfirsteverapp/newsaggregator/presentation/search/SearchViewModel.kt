@@ -55,7 +55,13 @@ class SearchViewModel @Inject constructor(
             _searchResults.value = Resource.Loading()
 
             newsRepository.searchNews(query).collect { resource ->
-                _searchResults.value = resource
+                _searchResults.value = when (resource) {
+                    is Resource.Success -> Resource.Success(resource.data ?: emptyList())
+                    is Resource.Error -> Resource.Error(resource.message)
+                    is Resource.Loading -> Resource.Loading()
+                    is Resource.Idle -> Resource.Idle()
+                    else -> Resource.Idle()
+                }
 
                 // Save to recent searches on success
                 if (resource is Resource.Success) {
@@ -81,7 +87,7 @@ class SearchViewModel @Inject constructor(
                             it.copy(isBookmarked = !it.isBookmarked)
                         } else it
                     }
-                    Resource.Success(updatedList)
+                    Resource.Success(updatedList ?: emptyList())
                 }
                 else -> current
             }

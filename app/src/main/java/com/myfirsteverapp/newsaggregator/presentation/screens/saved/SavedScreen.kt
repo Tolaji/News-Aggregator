@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.myfirsteverapp.newsaggregator.domain.model.Article
 import com.myfirsteverapp.newsaggregator.presentation.components.ArticleCard
+import com.myfirsteverapp.newsaggregator.util.Resource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,7 +22,7 @@ fun SavedScreen(
     onArticleClick: (Article) -> Unit,
     viewModel: SavedViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val savedArticles by viewModel.savedArticles.collectAsState()
 
     Scaffold(
         topBar = {
@@ -34,8 +35,8 @@ fun SavedScreen(
             )
         }
     ) { padding ->
-        when {
-            uiState.isLoading -> {
+        when (savedArticles) {
+            is Resource.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -45,7 +46,8 @@ fun SavedScreen(
                     CircularProgressIndicator()
                 }
             }
-            uiState.articles.isEmpty() -> {
+            is Resource.Error -> {
+                val errorMessage = (savedArticles as Resource.Error).message
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -62,39 +64,83 @@ fun SavedScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No saved articles yet",
+                        text = "Error loading saved articles",
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Articles you bookmark will appear here",
+                        text = errorMessage ?: "Unknown error occurred",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { viewModel.loadSavedArticles() }) {
+                        Text("Retry")
+                    }
+                }
+            }
+            is Resource.Success -> {
+                val articles = (savedArticles as Resource.Success).data ?: emptyList()
+                if (articles.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BookmarkBorder,
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No saved articles yet",
+                            style = MaterialTheme.typography.headlineSmall,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Articles you bookmark will appear here",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(
+                            items = articles,
+                            key = { it.url } // Use URL as unique identifier
+                        ) { article ->
+                            ArticleCard(
+                                article = article,
+                                onClick = { onArticleClick(article) },
+                                onBookmarkClick = { viewModel.toggleBookmark(article) }
+                            )
+                        }
+                    }
                 }
             }
             else -> {
-                LazyColumn(
+                // Handle any other state
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(
-                        items = uiState.articles,
-                        key = { it.id }
-                    ) { article ->
-                        ArticleCard(
-                            article = article,
-                            onClick = {
-                                viewModel.markAsRead(article)
-                                onArticleClick(article)
-                            },
-                            onBookmarkClick = { viewModel.deleteArticle(article) }
-                        )
-                    }
+                    Text("Unknown state")
                 }
             }
         }

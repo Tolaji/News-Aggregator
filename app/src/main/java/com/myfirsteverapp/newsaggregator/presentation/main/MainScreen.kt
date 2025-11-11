@@ -14,6 +14,7 @@ import com.myfirsteverapp.newsaggregator.domain.model.Article
 import com.myfirsteverapp.newsaggregator.presentation.factcheck.FactCheckScreen
 import com.myfirsteverapp.newsaggregator.presentation.screens.home.HomeScreen
 import com.myfirsteverapp.newsaggregator.presentation.navigation.BottomNavItem
+//import com.myfirsteverapp.newsaggregator.presentation.navigation.BottomNavItem.FactCheck
 import com.myfirsteverapp.newsaggregator.presentation.profile.ProfileScreen
 import com.myfirsteverapp.newsaggregator.presentation.saved.SavedScreen
 
@@ -82,7 +83,7 @@ fun MainScreen(
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavItem.Home.route) {
-                HomeScreen(onArticleClick = onArticleClick)
+                HomeScreen(onArticleClick = onArticleClick, onSearchClick = onSearchClick)
             }
 
             composable(BottomNavItem.Saved.route) {

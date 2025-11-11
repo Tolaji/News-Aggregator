@@ -4,6 +4,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.myfirsteverapp.newsaggregator.domain.model.Article
+import com.myfirsteverapp.newsaggregator.domain.model.Category
+import com.myfirsteverapp.newsaggregator.domain.model.Source
 import com.myfirsteverapp.newsaggregator.domain.model.User
 import com.myfirsteverapp.newsaggregator.domain.model.UserPreferences
 import kotlinx.coroutines.channels.awaitClose
@@ -35,10 +37,10 @@ class FirestoreManager @Inject constructor(
                 "description" to article.description,
                 "content" to article.content,
                 "url" to article.url,
-                "imageUrl" to article.imageUrl,
+                "urlToImage" to article.urlToImage,
                 "author" to article.author,
                 "sourceName" to article.source.name,
-                "publishedAt" to Timestamp(article.publishedAt),
+                "publishedAt" to article.publishedAt,  // String
                 "category" to article.category.name,
                 "savedAt" to Timestamp.now(),
                 "isBookmarked" to true
@@ -64,7 +66,7 @@ class FirestoreManager @Inject constructor(
                 "email" to user.email,
                 "displayName" to user.displayName,
                 "photoUrl" to user.photoUrl,
-                "createdAt" to Timestamp(java.util.Date(user.createdAt))
+                "createdAt" to Timestamp.now()  // Use Timestamp.now() for consistency
             )
 
             firestore.collection("users")
@@ -82,11 +84,9 @@ class FirestoreManager @Inject constructor(
 
     fun getSavedArticles(): Flow<Result<List<Article>>> = callbackFlow {
         val userId = getUserId()
-
         val listener = firestore.collection("users")
             .document(userId)
             .collection("savedArticles")
-            .orderBy("savedAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     trySend(Result.failure(error))
@@ -95,25 +95,23 @@ class FirestoreManager @Inject constructor(
 
                 val articles = snapshot?.documents?.mapNotNull { doc ->
                     try {
-                        // Map Firestore document to Article domain model
                         Article(
-                            id = doc.getString("id") ?: "",
-                            title = doc.getString("title") ?: "",
-                            description = doc.getString("description") ?: "",
-                            content = doc.getString("content") ?: "",
-                            url = doc.getString("url") ?: "",
-                            imageUrl = doc.getString("imageUrl"),
+                            id = doc.id,
+                            title = doc.getString("title") ?: return@mapNotNull null,
+                            description = doc.getString("description"),
+                            content = doc.getString("content"),
+                            url = doc.getString("url") ?: return@mapNotNull null,
+                            urlToImage = doc.getString("urlToImage"),
                             author = doc.getString("author"),
-                            source = com.myfirsteverapp.newsaggregator.domain.model.Source(
+                            publishedAt = doc.getString("publishedAt") ?: "",
+                            source = Source(
                                 id = null,
-                                name = doc.getString("sourceName") ?: ""
+                                name = doc.getString("sourceName") ?: "Unknown"
                             ),
-                            publishedAt = doc.getTimestamp("publishedAt")?.toDate()
-                                ?: java.util.Date(),
-                            category = com.myfirsteverapp.newsaggregator.domain.model.Category.valueOf(
-                                doc.getString("category") ?: "ALL"
-                            ),
-                            isBookmarked = true
+                            category = Category.valueOf(doc.getString("category") ?: "ALL"),
+                            isSaved = true,
+                            isRead = doc.getBoolean("isRead") ?: false,
+                            isBookmarked = doc.getBoolean("isBookmarked") ?: true
                         )
                     } catch (e: Exception) {
                         null
@@ -126,66 +124,22 @@ class FirestoreManager @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    suspend fun getUserPreferences(): Result<UserPreferences> {
-        return try {
-            val userId = getUserId()
-            val doc = firestore.collection("users")
-                .document(userId)
-                .collection("preferences")
-                .document("settings")
-                .get()
-                .await()
-
-            if (doc.exists()) {
-                val favoriteCategoriesList = doc.get("favoriteCategories")
-                val favoriteCategories = if (favoriteCategoriesList is List<*>) {
-                    favoriteCategoriesList.filterIsInstance<String>()
-                        .mapNotNull {
-                            try {
-                                com.myfirsteverapp.newsaggregator.domain.model.Category.valueOf(it)
-                            } catch (e: Exception) { null }
-                        }
-                } else {
-                    emptyList()
-                }
-
-                val prefs = UserPreferences(
-                    favoriteCategories = favoriteCategories,
-                    notificationsEnabled = doc.getBoolean("notificationsEnabled") ?: true,
-                    darkModeEnabled = doc.getBoolean("darkModeEnabled") ?: false,
-                    autoRefresh = doc.getBoolean("autoRefresh") ?: true
-                )
-                Result.success(prefs)
-            } else {
-                Result.success(UserPreferences())
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // ==================== UPDATE (MODIFY) ====================
-
-    suspend fun updateArticleReadStatus(
-        articleId: String,
-        isRead: Boolean
-    ): Result<Unit> {
+    suspend fun updateArticleReadStatus(articleId: String, isRead: Boolean): Result<Unit> {
         return try {
             val userId = getUserId()
             firestore.collection("users")
                 .document(userId)
                 .collection("savedArticles")
                 .document(articleId)
-                .update("readStatus", if (isRead) "READ" else "UNREAD")
+                .update("isRead", isRead)
                 .await()
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun updateUserPreferences(prefs: UserPreferences): Result<Unit> {
+    suspend fun saveUserPreferences(prefs: UserPreferences): Result<Unit> {
         return try {
             val userId = getUserId()
             val prefsData = hashMapOf(
@@ -265,8 +219,8 @@ class FirestoreManager @Inject constructor(
                 snapshot?.documentChanges?.forEach { change ->
                     if (change.type == com.google.firebase.firestore.DocumentChange.Type.ADDED) {
                         // Parse and send new article
-                        // Implementation similar to getSavedArticles mapping
-                        trySend(null) // Placeholder
+                        val article = change.document.toObject(Article::class.java)
+                        trySend(article)
                     }
                 }
             }

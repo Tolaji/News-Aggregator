@@ -72,7 +72,7 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(Category.values()) { category ->
+                    items(Category.entries.toTypedArray()) { category ->
                         CategoryChip(
                             category = category,
                             isSelected = category == uiState.selectedCategory,
@@ -124,7 +124,7 @@ fun HomeScreen(
                         ) {
                             items(
                                 items = uiState.articles,
-                                key = { it.id }
+                                key = { it.id ?: it.url } // Use url as fallback if id is null
                             ) { article ->
                                 ArticleCard(
                                     article = article,

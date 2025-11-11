@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow  // Add this
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -75,35 +76,15 @@ private fun FilterChips(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item {
+        items(VerificationStatus.values()) { status ->
             FilterChip(
-                selected = selectedFilter == null,
-                onClick = { onFilterSelected(null) },
-                label = { Text("All") },
-                leadingIcon = if (selectedFilter == null) {
-                    { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                } else null
+                selected = selectedFilter == status,
+                onClick = { onFilterSelected(if (selectedFilter == status) null else status) },
+                label = { Text(status.displayName) }
             )
-        }
-
-        VerificationStatus.values().forEach { status ->
-            item {
-                FilterChip(
-                    selected = selectedFilter == status,
-                    onClick = { onFilterSelected(status) },
-                    label = { Text(status.displayName) },
-                    leadingIcon = if (selectedFilter == status) {
-                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                    } else null,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = status.color.copy(alpha = 0.2f),
-                        selectedLabelColor = status.color
-                    )
-                )
-            }
         }
     }
 }

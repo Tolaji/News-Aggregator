@@ -1,5 +1,7 @@
 package com.myfirsteverapp.newsaggregator.domain.model
 
+import com.myfirsteverapp.newsaggregator.domain.model.Category
+
 data class User(
     val uid: String,
     val email: String,

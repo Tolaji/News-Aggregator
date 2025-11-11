@@ -23,6 +23,9 @@ plugins {
     // Hilt (Dagger Dependency Injection) (Updated to latest stable version 2.51.1)
     id("com.google.dagger.hilt.android") version "2.51.1" apply false
 
+    // KSP (Kotlin Symbol Processing API) (Updated to latest stable version 2.0.0-1.0.21)
+    id("com.google.devtools.ksp") version "2.0.0-1.0.21" apply false
+
     // It is highly recommended to use the latest stable Kotlin version (currently 2.0.0 or higher)
     // in your Version Catalog or explicit declaration for optimal performance.
     // If you are using the Kotlin 2.0.0 compiler, you must use the 2.0.0 plugin version.

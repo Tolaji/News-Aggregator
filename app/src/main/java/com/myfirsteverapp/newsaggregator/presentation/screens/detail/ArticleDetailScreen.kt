@@ -18,6 +18,34 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.myfirsteverapp.newsaggregator.domain.model.Article
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
+
+// Extension function for time formatting
+fun String.getTimeAgo(): String {
+    return try {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("UTC")
+        val date = dateFormat.parse(this)
+        val now = Date()
+        val diff = now.time - date.time
+
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
+        val hours = TimeUnit.MILLISECONDS.toHours(diff)
+        val days = TimeUnit.MILLISECONDS.toDays(diff)
+
+        when {
+            days > 0 -> "$days day${if (days > 1) "s" else ""} ago"
+            hours > 0 -> "$hours hour${if (hours > 1) "s" else ""} ago"
+            minutes > 0 -> "$minutes minute${if (minutes > 1) "s" else ""} ago"
+            else -> "Just now"
+        }
+    } catch (e: Exception) {
+        "Recently"
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +100,7 @@ fun ArticleDetailScreen(
                 .verticalScroll(scrollState)
         ) {
             // Hero image
-            article.imageUrl?.let { imageUrl ->
+            article.urlToImage?.let { imageUrl ->
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = article.title,
@@ -106,27 +134,32 @@ fun ArticleDetailScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = article.getTimeAgo(),
+                        text = article.publishedAt.getTimeAgo(),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 article.author?.let { author ->
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "By $author",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
-                    text = article.content,
+                    text = article.content ?: article.description ?: "No content available",
                     style = MaterialTheme.typography.bodyLarge,
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight.times(1.5f)
                 )
@@ -145,4 +178,7 @@ fun ArticleDetailScreen(
             }
         }
     }
+
+
 }
+

@@ -2,10 +2,12 @@ package com.myfirsteverapp.newsaggregator.data.repository
 
 import com.myfirsteverapp.newsaggregator.data.remote.NewsApiService
 import com.myfirsteverapp.newsaggregator.domain.model.Article
+import com.myfirsteverapp.newsaggregator.domain.model.Source
 import com.myfirsteverapp.newsaggregator.domain.repository.NewsRepository
 import com.myfirsteverapp.newsaggregator.util.Resource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.myfirsteverapp.newsaggregator.domain.model.Category
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
@@ -31,14 +33,19 @@ class NewsRepositoryImpl @Inject constructor(
                     if (dto.title == null || dto.url == null) return@mapNotNull null
 
                     Article(
+                        id = dto.url.hashCode().toString(),
                         title = dto.title,
                         description = dto.description ?: "",
+                        content = dto.content ?: "",
                         url = dto.url,
                         urlToImage = dto.urlToImage ?: "",
-                        publishedAt = dto.publishedAt ?: "",
-                        source = dto.source?.name ?: "Unknown",
                         author = dto.author,
-                        content = dto.content,
+                        publishedAt = dto.publishedAt ?: "",
+                        source = Source(
+                            id = dto.source?.id,
+                            name = dto.source?.name ?: "Unknown"
+                        ),
+                        category = Category.ALL,  // Default or from param
                         isBookmarked = isArticleBookmarked(dto.url)
                     )
                 }
@@ -63,32 +70,36 @@ class NewsRepositoryImpl @Inject constructor(
                     if (dto.title == null || dto.url == null) return@mapNotNull null
 
                     Article(
+                        id = dto.url.hashCode().toString(),
                         title = dto.title,
                         description = dto.description ?: "",
+                        content = dto.content ?: "",
                         url = dto.url,
                         urlToImage = dto.urlToImage ?: "",
-                        publishedAt = dto.publishedAt ?: "",
-                        source = dto.source?.name ?: "Unknown",
                         author = dto.author,
-                        content = dto.content,
+                        publishedAt = dto.publishedAt ?: "",
+                        source = Source(
+                            id = dto.source?.id,
+                            name = dto.source?.name ?: "Unknown"
+                        ),
+                        category = Category.ALL,
                         isBookmarked = isArticleBookmarked(dto.url)
                     )
                 }
                 emit(Resource.Success(articles))
             } else {
-                emit(Resource.Error("No results found"))
+                emit(Resource.Error("Failed to fetch news"))
             }
         } catch (e: Exception) {
-            emit(Resource.Error(e.localizedMessage ?: "Search failed"))
+            emit(Resource.Error(e.localizedMessage ?: "An unexpected error occurred"))
         }
     }
 
     override suspend fun getBookmarkedArticles(): Flow<List<Article>> = flow {
         try {
-            val userId = auth.currentUser?.uid ?: return@flow
+            val userId = auth.currentUser?.uid ?: return@flow emit(emptyList())
 
-            val snapshot = firestore
-                .collection("users")
+            val snapshot = firestore.collection("users")
                 .document(userId)
                 .collection("bookmarks")
                 .get()
@@ -97,14 +108,19 @@ class NewsRepositoryImpl @Inject constructor(
             val articles = snapshot.documents.mapNotNull { doc ->
                 try {
                     Article(
+                        id = doc.id,
                         title = doc.getString("title") ?: return@mapNotNull null,
                         description = doc.getString("description") ?: "",
+                        content = doc.getString("content") ?: "",
                         url = doc.getString("url") ?: return@mapNotNull null,
                         urlToImage = doc.getString("urlToImage") ?: "",
-                        publishedAt = doc.getString("publishedAt") ?: "",
-                        source = doc.getString("source") ?: "Unknown",
                         author = doc.getString("author"),
-                        content = doc.getString("content"),
+                        publishedAt = doc.getString("publishedAt") ?: "",
+                        source = Source(
+                            id = null,
+                            name = doc.getString("source") ?: "Unknown"
+                        ),
+                        category = Category.ALL,
                         isBookmarked = true
                     )
                 } catch (e: Exception) {
@@ -125,12 +141,12 @@ class NewsRepositoryImpl @Inject constructor(
             val articleData = hashMapOf(
                 "title" to article.title,
                 "description" to article.description,
+                "content" to article.content,
                 "url" to article.url,
                 "urlToImage" to article.urlToImage,
-                "publishedAt" to article.publishedAt,
-                "source" to article.source,
                 "author" to article.author,
-                "content" to article.content,
+                "publishedAt" to article.publishedAt,
+                "source" to article.source.name,
                 "isBookmarked" to true
             )
 
