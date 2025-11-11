@@ -34,16 +34,18 @@ fun ArticleCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Article Image
-            if (article.urlToImage.isNotEmpty()) {
-                AsyncImage(
-                    model = article.urlToImage,
-                    contentDescription = "Article Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                    contentScale = ContentScale.Crop
-                )
+            article.urlToImage?.let { imageUrl ->
+                if (imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Article Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
@@ -59,15 +61,17 @@ fun ArticleCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Description
-                if (article.description.isNotEmpty()) {
-                    Text(
-                        text = article.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                article.description?.let { description ->
+                    if (description.isNotEmpty()) {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
 
                 // Footer: Source, Date, Bookmark
@@ -78,7 +82,7 @@ fun ArticleCard(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = article.source,
+                            text = article.source.name,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold

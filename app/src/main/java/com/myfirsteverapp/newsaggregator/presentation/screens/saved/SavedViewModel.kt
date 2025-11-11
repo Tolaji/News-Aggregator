@@ -17,7 +17,7 @@ class SavedViewModel @Inject constructor(
     private val newsRepository: NewsRepository
 ) : ViewModel() {
 
-    private val _savedArticles = MutableStateFlow<Resource<List<Article>>>(Resource.Loading())
+    private val _savedArticles = MutableStateFlow<Resource<List<Article>>>(Resource.Loading<List<Article>>())
     val savedArticles: StateFlow<Resource<List<Article>>> = _savedArticles.asStateFlow()
 
     init {
@@ -27,12 +27,12 @@ class SavedViewModel @Inject constructor(
     fun loadSavedArticles() {
         viewModelScope.launch {
             try {
-                _savedArticles.value = Resource.Loading()
+                _savedArticles.value = Resource.Loading<List<Article>>()
                 newsRepository.getBookmarkedArticles().collect { articles ->
-                    _savedArticles.value = Resource.Success(articles)
+                    _savedArticles.value = Resource.Success<List<Article>>(articles)
                 }
             } catch (e: Exception) {
-                _savedArticles.value = Resource.Error(e.localizedMessage ?: "Failed to load saved articles")
+                _savedArticles.value = Resource.Error<List<Article>>(e.localizedMessage ?: "Failed to load saved articles")
             }
         }
     }
@@ -45,7 +45,7 @@ class SavedViewModel @Inject constructor(
             _savedArticles.value = when (val current = _savedArticles.value) {
                 is Resource.Success -> {
                     val updatedList = current.data?.filter { it.url != article.url } ?: emptyList()
-                    Resource.Success(updatedList)
+                    Resource.Success<List<Article>>(updatedList)
                 }
                 else -> current
             }

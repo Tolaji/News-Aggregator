@@ -1,7 +1,7 @@
 package com.myfirsteverapp.newsaggregator.di
 
 import com.myfirsteverapp.newsaggregator.BuildConfig
-import com.myfirsteverapp.newsaggregator.data.remote.NewsApiService
+import com.myfirsteverapp.newsaggregator.data.remote.api.NewsApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

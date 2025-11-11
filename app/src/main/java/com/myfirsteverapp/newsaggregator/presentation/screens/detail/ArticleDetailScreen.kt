@@ -27,7 +27,7 @@ fun String.getTimeAgo(): String {
     return try {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
         dateFormat.timeZone = TimeZone.getTimeZone("UTC")
-        val date = dateFormat.parse(this)
+        val date = dateFormat.parse(this) ?: return "Recently"
         val now = Date()
         val diff = now.time - date.time
 

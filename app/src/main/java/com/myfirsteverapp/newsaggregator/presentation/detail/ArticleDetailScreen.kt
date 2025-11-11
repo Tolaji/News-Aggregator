@@ -73,15 +73,17 @@ fun ArticleDetailScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // Article Image
-            if (article.urlToImage.isNotEmpty()) {
-                AsyncImage(
-                    model = article.urlToImage,
-                    contentDescription = "Article Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp),
-                    contentScale = ContentScale.Crop
-                )
+            article.urlToImage?.let { imageUrl ->
+                if (imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Article Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
@@ -111,7 +113,7 @@ fun ArticleDetailScreen(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = article.source,
+                            text = article.source.name,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -125,7 +127,7 @@ fun ArticleDetailScreen(
                     )
                 }
 
-                if (article.author != null) {
+                article.author?.let { author ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -138,7 +140,7 @@ fun ArticleDetailScreen(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "By ${article.author}",
+                            text = "By $author",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -146,17 +148,19 @@ fun ArticleDetailScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Description
-                if (article.description.isNotEmpty()) {
-                    Text(
-                        text = article.description,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                article.description?.let { description ->
+                    if (description.isNotEmpty()) {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
 
                 // Content

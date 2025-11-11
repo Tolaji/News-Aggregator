@@ -1,6 +1,6 @@
 package com.myfirsteverapp.newsaggregator.data.repository
 
-import com.myfirsteverapp.newsaggregator.data.remote.NewsApiService
+import com.myfirsteverapp.newsaggregator.data.remote.api.NewsApiService
 import com.myfirsteverapp.newsaggregator.domain.model.Article
 import com.myfirsteverapp.newsaggregator.domain.model.Source
 import com.myfirsteverapp.newsaggregator.domain.repository.NewsRepository
