@@ -4,7 +4,7 @@ import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
 /**
- * This is the custom Application class for the News Aggregator app.
+ * This is the custom Application class for the Weflut Live app.
  *
  * The 'android:name' attribute in AndroidManifest.xml links the entire application process
  * to this specific class.
