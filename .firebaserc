@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "weflut-live"
-  }
+    "default": "weflut-live",
+    "staging": "weflut-live"
+  },
+  "targets": {},
+  "etags": {}
 }

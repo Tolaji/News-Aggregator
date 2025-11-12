@@ -5,11 +5,15 @@ import com.myfirsteverapp.newsaggregator.data.remote.api.NewsApiService
 import com.myfirsteverapp.newsaggregator.domain.model.Article
 import com.myfirsteverapp.newsaggregator.domain.model.Source
 import com.myfirsteverapp.newsaggregator.domain.repository.NewsRepository
+import com.myfirsteverapp.newsaggregator.util.DateUtils
 import com.myfirsteverapp.newsaggregator.util.Resource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.myfirsteverapp.newsaggregator.domain.model.Category
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -41,30 +45,39 @@ class NewsRepositoryImpl @Inject constructor(
                 val bookmarkedUrls = getBookmarkedUrlsSet()
                 Log.d(TAG, "📚 Found ${bookmarkedUrls.size} bookmarked articles")
                 
-                val articles = response.articles.mapNotNull { dto ->
-                    // Skip articles with missing critical fields
-                    if (dto.title == null || dto.url == null) {
-                        Log.w(TAG, "⚠️ Skipping article - missing title or URL")
-                        return@mapNotNull null
-                    }
+                val freshnessCutoff = DateUtils.hoursAgoInMillis(36)
 
-                    Article(
-                        id = dto.url.hashCode().toString(),
-                        title = dto.title,
-                        description = dto.description ?: "",
-                        content = dto.content ?: "",
-                        url = dto.url,
-                        urlToImage = dto.urlToImage ?: "",
-                        author = dto.author,
-                        publishedAt = dto.publishedAt ?: "",
-                        source = Source(
-                            id = dto.source?.id,
-                            name = dto.source?.name ?: "Unknown"
-                        ),
-                        category = Category.ALL,  // Default or from param
-                        isBookmarked = bookmarkedUrls.contains(dto.url.hashCode().toString())
-                    )
-                }
+                val articles = response.articles
+                    .mapNotNull { dto ->
+                        // Skip articles with missing critical fields
+                        if (dto.title == null || dto.url == null) {
+                            Log.w(TAG, "⚠️ Skipping article - missing title or URL")
+                            return@mapNotNull null
+                        }
+
+                        Article(
+                            id = dto.url.hashCode().toString(),
+                            title = dto.title,
+                            description = dto.description ?: "",
+                            content = dto.content ?: "",
+                            url = dto.url,
+                            urlToImage = dto.urlToImage ?: "",
+                            author = dto.author,
+                            publishedAt = dto.publishedAt ?: "",
+                            source = Source(
+                                id = dto.source?.id,
+                                name = dto.source?.name ?: "Unknown"
+                            ),
+                            category = Category.ALL,  // Default or from param
+                            isBookmarked = bookmarkedUrls.contains(dto.url.hashCode().toString())
+                        )
+                    }
+                    .distinctBy { it.url }
+                    .filter { article ->
+                        val publishedAtMillis = DateUtils.parseIso8601ToMillis(article.publishedAt)
+                        publishedAtMillis == 0L || publishedAtMillis >= freshnessCutoff
+                    }
+                    .sortedByDescending { article -> DateUtils.parseIso8601ToMillis(article.publishedAt) }
                 
                 Log.d(TAG, "✨ Successfully parsed ${articles.size} articles")
                 if (articles.isNotEmpty()) {
@@ -99,30 +112,39 @@ class NewsRepositoryImpl @Inject constructor(
                 val bookmarkedUrls = getBookmarkedUrlsSet()
                 Log.d(TAG, "📚 Found ${bookmarkedUrls.size} bookmarked articles")
                 
-                val articles = response.articles.mapNotNull { dto ->
-                    // Skip articles with missing critical fields
-                    if (dto.title == null || dto.url == null) {
-                        Log.w(TAG, "⚠️ Skipping article - missing title or URL")
-                        return@mapNotNull null
-                    }
+                val freshnessCutoff = DateUtils.hoursAgoInMillis(36)
 
-                    Article(
-                        id = dto.url.hashCode().toString(),
-                        title = dto.title,
-                        description = dto.description ?: "",
-                        content = dto.content ?: "",
-                        url = dto.url,
-                        urlToImage = dto.urlToImage ?: "",
-                        author = dto.author,
-                        publishedAt = dto.publishedAt ?: "",
-                        source = Source(
-                            id = dto.source?.id,
-                            name = dto.source?.name ?: "Unknown"
-                        ),
-                        category = Category.ALL,
-                        isBookmarked = bookmarkedUrls.contains(dto.url.hashCode().toString())
-                    )
-                }
+                val articles = response.articles
+                    .mapNotNull { dto ->
+                        // Skip articles with missing critical fields
+                        if (dto.title == null || dto.url == null) {
+                            Log.w(TAG, "⚠️ Skipping article - missing title or URL")
+                            return@mapNotNull null
+                        }
+
+                        Article(
+                            id = dto.url.hashCode().toString(),
+                            title = dto.title,
+                            description = dto.description ?: "",
+                            content = dto.content ?: "",
+                            url = dto.url,
+                            urlToImage = dto.urlToImage ?: "",
+                            author = dto.author,
+                            publishedAt = dto.publishedAt ?: "",
+                            source = Source(
+                                id = dto.source?.id,
+                                name = dto.source?.name ?: "Unknown"
+                            ),
+                            category = Category.ALL,
+                            isBookmarked = bookmarkedUrls.contains(dto.url.hashCode().toString())
+                        )
+                    }
+                    .distinctBy { it.url }
+                    .filter { article ->
+                        val publishedAtMillis = DateUtils.parseIso8601ToMillis(article.publishedAt)
+                        publishedAtMillis == 0L || publishedAtMillis >= freshnessCutoff
+                    }
+                    .sortedByDescending { article -> DateUtils.parseIso8601ToMillis(article.publishedAt) }
                 
                 Log.d(TAG, "✨ Successfully parsed ${articles.size} articles for search query: $query")
                 emit(Resource.Success(articles))
@@ -138,44 +160,53 @@ class NewsRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getBookmarkedArticles(): Flow<List<Article>> = flow {
-        try {
-            val userId = auth.currentUser?.uid ?: return@flow emit(emptyList())
+    override suspend fun getBookmarkedArticles(): Flow<List<Article>> = callbackFlow {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
 
-            val snapshot = firestore.collection("users")
-                .document(userId)
-                .collection("bookmarks")
-                .get()
-                .await()
-
-            val articles = snapshot.documents.mapNotNull { doc ->
-                try {
-                    Article(
-                        id = doc.id,
-                        title = doc.getString("title") ?: return@mapNotNull null,
-                        description = doc.getString("description") ?: "",
-                        content = doc.getString("content") ?: "",
-                        url = doc.getString("url") ?: return@mapNotNull null,
-                        urlToImage = doc.getString("urlToImage") ?: "",
-                        author = doc.getString("author"),
-                        publishedAt = doc.getString("publishedAt") ?: "",
-                        source = Source(
-                            id = null,
-                            name = doc.getString("source") ?: "Unknown"
-                        ),
-                        category = Category.ALL,
-                        isBookmarked = true
-                    )
-                } catch (e: Exception) {
-                    null
+        val registration = firestore.collection("users")
+            .document(userId)
+            .collection("bookmarks")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.w(TAG, "⚠️ Error listening to bookmarks: ${error.message}", error)
+                    trySend(emptyList()).isSuccess
+                    return@addSnapshotListener
                 }
+
+                val articles = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        Article(
+                            id = doc.id,
+                            title = doc.getString("title") ?: return@mapNotNull null,
+                            description = doc.getString("description") ?: "",
+                            content = doc.getString("content") ?: "",
+                            url = doc.getString("url") ?: return@mapNotNull null,
+                            urlToImage = doc.getString("urlToImage") ?: "",
+                            author = doc.getString("author"),
+                            publishedAt = doc.getString("publishedAt") ?: "",
+                            source = Source(
+                                id = null,
+                                name = doc.getString("source") ?: "Unknown"
+                            ),
+                            category = Category.ALL,
+                            isBookmarked = true
+                        )
+                    } catch (e: Exception) {
+                        Log.w(TAG, "⚠️ Failed to map bookmarked article: ${e.message}")
+                        null
+                    }
+                } ?: emptyList()
+
+                trySend(articles).isSuccess
             }
 
-            emit(articles)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
-    }
+        awaitClose { registration.remove() }
+    }.distinctUntilChanged()
 
     override suspend fun addBookmark(article: Article) {
         try {
@@ -260,4 +291,5 @@ class NewsRepositoryImpl @Inject constructor(
             emptySet()
         }
     }
+
 }

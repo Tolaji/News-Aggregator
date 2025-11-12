@@ -21,6 +21,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirestore(): FirebaseFirestore {
-        return FirebaseFirestore.getInstance()
+        return FirebaseFirestore.getInstance("weflut-live")
+
     }
 }

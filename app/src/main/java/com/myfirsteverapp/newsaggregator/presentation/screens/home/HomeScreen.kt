@@ -23,7 +23,7 @@ import com.myfirsteverapp.newsaggregator.presentation.components.CategoryChip
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onArticleClick: (Article) -> Unit,
+    onArticleClick: (Article) -> Result<Unit>,
     onSearchClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -77,6 +77,21 @@ fun HomeScreen(
                             category = category,
                             isSelected = category == uiState.selectedCategory,
                             onClick = { viewModel.onCategorySelected(category) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.availableFreshnessFilters) { filter ->
+                        FilterChip(
+                            selected = filter == uiState.freshnessFilter,
+                            onClick = { viewModel.onFreshnessFilterSelected(filter) },
+                            label = { Text(filter.displayName) }
                         )
                     }
                 }

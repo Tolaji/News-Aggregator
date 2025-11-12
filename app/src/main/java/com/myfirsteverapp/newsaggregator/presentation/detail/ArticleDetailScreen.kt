@@ -25,10 +25,17 @@ import com.myfirsteverapp.newsaggregator.domain.model.Article
 fun ArticleDetailScreen(
     article: Article,
     onBackClick: () -> Unit,
+    onReadFullArticle: ((String) -> Unit)? = null,
     viewModel: ArticleDetailViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     var isBookmarked by remember { mutableStateOf(article.isBookmarked) }
+    
+    val handleReadFullArticle = onReadFullArticle ?: { url ->
+        // Default: open in browser if no handler provided
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
+    }
 
     Scaffold(
         topBar = {
@@ -177,8 +184,7 @@ fun ArticleDetailScreen(
                 // Read Full Article Button
                 Button(
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.url))
-                        context.startActivity(intent)
+                        handleReadFullArticle(article.url)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

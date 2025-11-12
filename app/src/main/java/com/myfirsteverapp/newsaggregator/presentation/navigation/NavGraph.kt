@@ -1,19 +1,27 @@
 package com.myfirsteverapp.newsaggregator.presentation.navigation
 
+import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.myfirsteverapp.newsaggregator.domain.model.Article
-import com.myfirsteverapp.newsaggregator.presentation.screens.auth.LoginScreen
-import com.myfirsteverapp.newsaggregator.presentation.screens.auth.RegisterScreen
 import com.myfirsteverapp.newsaggregator.presentation.detail.ArticleDetailScreen
 import com.myfirsteverapp.newsaggregator.presentation.main.MainScreen
+import com.myfirsteverapp.newsaggregator.presentation.screens.auth.LoginScreen
+import com.myfirsteverapp.newsaggregator.presentation.screens.auth.RegisterScreen
 import com.myfirsteverapp.newsaggregator.presentation.search.SearchScreen
 import com.myfirsteverapp.newsaggregator.presentation.splash.SplashScreen
+import com.myfirsteverapp.newsaggregator.presentation.webview.ArticleWebViewScreen
 import com.google.gson.Gson
+
+private const val TAG = "NavGraph"
 
 @Composable
 fun NavGraph(
@@ -108,15 +116,74 @@ fun NavGraph(
                 }
             )
         ) { backStackEntry ->
+            val context = LocalContext.current
             val articleJson = backStackEntry.arguments?.getString("articleJson")
-            val article = Gson().fromJson(articleJson, Article::class.java)
+            val article = articleJson
+                ?.let { runCatching { Uri.decode(it) } }
+                ?.onFailure { throwable ->
+                    Log.e(TAG, "Failed to decode article JSON argument", throwable)
+                }
+                ?.getOrNull()
+                ?.let { decoded ->
+                    runCatching { Gson().fromJson(decoded, Article::class.java) }
+                        .onFailure { throwable ->
+                            Log.e(TAG, "Failed to parse Article from JSON", throwable)
+                        }
+                        .getOrNull()
+                }
 
-            ArticleDetailScreen(
-                article = article,
-                onBackClick = {
+            if (article == null) {
+                LaunchedEffect(Unit) {
+                    Toast.makeText(
+                        context,
+                        "Unable to open this article. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
                     navController.popBackStack()
                 }
+            } else {
+                ArticleDetailScreen(
+                    article = article,
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    onReadFullArticle = { url ->
+                        val route = Screen.ArticleWebView.createRoute(url)
+                        navController.navigate(route)
+                    }
+                )
+            }
+        }
+
+        // Article WebView Screen
+        composable(
+            route = Screen.ArticleWebView.route,
+            arguments = listOf(
+                navArgument("articleUrl") {
+                    type = NavType.StringType
+                }
             )
+        ) { backStackEntry ->
+            val articleUrl = backStackEntry.arguments?.getString("articleUrl")
+                ?.let { Uri.decode(it) } ?: ""
+
+            if (articleUrl.isEmpty()) {
+                LaunchedEffect(Unit) {
+                    Toast.makeText(
+                        LocalContext.current,
+                        "Invalid article URL",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    navController.popBackStack()
+                }
+            } else {
+                ArticleWebViewScreen(
+                    url = articleUrl,
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
     }
 }
