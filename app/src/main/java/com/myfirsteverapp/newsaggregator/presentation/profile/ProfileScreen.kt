@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -102,7 +104,7 @@ fun ProfileScreen(
                     VerticalDivider(modifier = Modifier.height(60.dp))
 
                     StatItem(
-                        icon = Icons.Default.Article,
+                        icon = Icons.AutoMirrored.Filled.Article,
                         label = "Read",
                         count = "0" // Placeholder - implement read tracking if needed
                     )
@@ -154,7 +156,7 @@ fun ProfileScreen(
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Logout, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Logout", style = MaterialTheme.typography.titleMedium)
             }
@@ -176,7 +178,7 @@ fun ProfileScreen(
             onDismissRequest = { showLogoutDialog = false },
             icon = {
                 Icon(
-                    Icons.Default.Logout,
+                    Icons.AutoMirrored.Filled.Logout,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error
                 )
@@ -295,7 +297,7 @@ private fun SettingsCard(
                 }
 
                 if (index < items.size - 1) {
-                    Divider()
+                    HorizontalDivider()
                 }
             }
         }

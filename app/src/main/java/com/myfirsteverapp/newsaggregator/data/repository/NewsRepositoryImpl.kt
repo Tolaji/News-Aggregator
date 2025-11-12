@@ -1,5 +1,6 @@
 package com.myfirsteverapp.newsaggregator.data.repository
 
+import android.util.Log
 import com.myfirsteverapp.newsaggregator.data.remote.api.NewsApiService
 import com.myfirsteverapp.newsaggregator.domain.model.Article
 import com.myfirsteverapp.newsaggregator.domain.model.Source
@@ -21,16 +22,31 @@ class NewsRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth
 ) : NewsRepository {
 
+    companion object {
+        private const val TAG = "NewsRepositoryImpl"
+    }
+
     override suspend fun getTopHeadlines(category: String?): Flow<Resource<List<Article>>> = flow {
         try {
+            Log.d(TAG, "📡 Starting API call - Category: $category")
             emit(Resource.Loading())
 
             val response = apiService.getTopHeadlines(category = category)
+            
+            Log.d(TAG, "✅ API Response received - Status: ${response.status}, Total Results: ${response.totalResults}")
+            Log.d(TAG, "📰 Articles in response: ${response.articles.size}")
 
             if (response.status == "ok") {
+                // Optimize: Fetch all bookmarks at once instead of checking individually
+                val bookmarkedUrls = getBookmarkedUrlsSet()
+                Log.d(TAG, "📚 Found ${bookmarkedUrls.size} bookmarked articles")
+                
                 val articles = response.articles.mapNotNull { dto ->
                     // Skip articles with missing critical fields
-                    if (dto.title == null || dto.url == null) return@mapNotNull null
+                    if (dto.title == null || dto.url == null) {
+                        Log.w(TAG, "⚠️ Skipping article - missing title or URL")
+                        return@mapNotNull null
+                    }
 
                     Article(
                         id = dto.url.hashCode().toString(),
@@ -46,28 +62,49 @@ class NewsRepositoryImpl @Inject constructor(
                             name = dto.source?.name ?: "Unknown"
                         ),
                         category = Category.ALL,  // Default or from param
-                        isBookmarked = isArticleBookmarked(dto.url)
+                        isBookmarked = bookmarkedUrls.contains(dto.url.hashCode().toString())
                     )
                 }
+                
+                Log.d(TAG, "✨ Successfully parsed ${articles.size} articles")
+                if (articles.isNotEmpty()) {
+                    Log.d(TAG, "📄 First article: ${articles.first().title}")
+                }
+                
                 emit(Resource.Success(articles))
             } else {
-                emit(Resource.Error("Failed to fetch news"))
+                val errorMsg = "API returned status: ${response.status}"
+                Log.e(TAG, "❌ $errorMsg")
+                emit(Resource.Error(errorMsg))
             }
         } catch (e: Exception) {
-            emit(Resource.Error(e.localizedMessage ?: "An unexpected error occurred"))
+            val errorMsg = e.localizedMessage ?: e.message ?: "An unexpected error occurred"
+            Log.e(TAG, "💥 Exception occurred: $errorMsg", e)
+            emit(Resource.Error(errorMsg))
         }
     }
 
     override suspend fun searchNews(query: String): Flow<Resource<List<Article>>> = flow {
         try {
+            Log.d(TAG, "🔍 Starting search API call - Query: $query")
             emit(Resource.Loading())
 
             val response = apiService.searchNews(query = query)
+            
+            Log.d(TAG, "✅ Search Response received - Status: ${response.status}, Total Results: ${response.totalResults}")
+            Log.d(TAG, "📰 Articles in response: ${response.articles.size}")
 
             if (response.status == "ok") {
+                // Optimize: Fetch all bookmarks at once instead of checking individually
+                val bookmarkedUrls = getBookmarkedUrlsSet()
+                Log.d(TAG, "📚 Found ${bookmarkedUrls.size} bookmarked articles")
+                
                 val articles = response.articles.mapNotNull { dto ->
                     // Skip articles with missing critical fields
-                    if (dto.title == null || dto.url == null) return@mapNotNull null
+                    if (dto.title == null || dto.url == null) {
+                        Log.w(TAG, "⚠️ Skipping article - missing title or URL")
+                        return@mapNotNull null
+                    }
 
                     Article(
                         id = dto.url.hashCode().toString(),
@@ -83,15 +120,21 @@ class NewsRepositoryImpl @Inject constructor(
                             name = dto.source?.name ?: "Unknown"
                         ),
                         category = Category.ALL,
-                        isBookmarked = isArticleBookmarked(dto.url)
+                        isBookmarked = bookmarkedUrls.contains(dto.url.hashCode().toString())
                     )
                 }
+                
+                Log.d(TAG, "✨ Successfully parsed ${articles.size} articles for search query: $query")
                 emit(Resource.Success(articles))
             } else {
-                emit(Resource.Error("Failed to fetch news"))
+                val errorMsg = "Search API returned status: ${response.status}"
+                Log.e(TAG, "❌ $errorMsg")
+                emit(Resource.Error(errorMsg))
             }
         } catch (e: Exception) {
-            emit(Resource.Error(e.localizedMessage ?: "An unexpected error occurred"))
+            val errorMsg = e.localizedMessage ?: e.message ?: "An unexpected error occurred"
+            Log.e(TAG, "💥 Search Exception occurred: $errorMsg", e)
+            emit(Resource.Error(errorMsg))
         }
     }
 
@@ -193,6 +236,28 @@ class NewsRepositoryImpl @Inject constructor(
             doc.exists()
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * Optimized: Fetch all bookmarked article IDs at once
+     * This is much faster than checking each article individually
+     */
+    private suspend fun getBookmarkedUrlsSet(): Set<String> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return emptySet()
+
+            val snapshot = firestore
+                .collection("users")
+                .document(userId)
+                .collection("bookmarks")
+                .get()
+                .await()
+
+            snapshot.documents.map { it.id }.toSet()
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ Error fetching bookmarks: ${e.message}")
+            emptySet()
         }
     }
 }

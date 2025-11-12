@@ -3,36 +3,64 @@ package com.myfirsteverapp.newsaggregator.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val LightColors: ColorScheme = lightColorScheme(
-    primary = Color(0xFF6750A4),
-    onPrimary = Color(0xFFFFFFFF),
-    secondary = Color(0xFF625B71),
-    background = Color(0xFFF6F5FF),
+    primary = CyanBlue,
+    onPrimary = DeepNavy,
+    primaryContainer = ElectricBlue,
+    onPrimaryContainer = DeepNavy,
+    secondary = ElectricBlue,
+    onSecondary = DeepNavy,
+    secondaryContainer = ElectricBlue.copy(alpha = 0.15f),
+    onSecondaryContainer = DeepNavy,
+    tertiary = PurpleMagenta,
+    onTertiary = Color.White,
+    tertiaryContainer = PurpleMagenta.copy(alpha = 0.15f),
+    onTertiaryContainer = PurpleMagenta,
+    background = Color(0xFFF3FAFD),
+    onBackground = OnLightHighEmphasis,
     surface = Color(0xFFFFFFFF),
-    error = Color(0xFFB00020),
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F)
+    onSurface = OnLightHighEmphasis,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = MutedGray,
+    outline = MutedGray,
+    error = ErrorRed,
+    onError = Color.White,
+    inversePrimary = ElectricBlue
 )
 
 private val DarkColors: ColorScheme = darkColorScheme(
-    primary = Color(0xFFD0BCFF),
-    onPrimary = Color(0xFF381E72),
-    secondary = Color(0xFFE8DEF8),
-    background = Color(0xFF1C1B1F),
-    surface = Color(0xFF121214),
-    error = Color(0xFFCF6679),
-    onBackground = Color(0xFFE6E1E5),
-    onSurface = Color(0xFFE6E1E5)
+    primary = CyanBlue,
+    onPrimary = DeepNavy,
+    primaryContainer = ElectricBlue,
+    onPrimaryContainer = DeepNavy,
+    secondary = ElectricBlue,
+    onSecondary = DeepNavy,
+    secondaryContainer = ElectricBlue.copy(alpha = 0.25f),
+    onSecondaryContainer = Color.White,
+    tertiary = PurpleMagenta,
+    onTertiary = Color.White,
+    tertiaryContainer = PurpleMagenta.copy(alpha = 0.25f),
+    onTertiaryContainer = Color.White,
+    background = DeepNavy,
+    onBackground = OnDarkHighEmphasis,
+    surface = DarkBlue,
+    onSurface = OnDarkHighEmphasis,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = MutedGray,
+    outline = MutedGray,
+    error = ErrorRed,
+    onError = Color.White,
+    inversePrimary = ElectricBlue
 )
 
 @Composable
-fun NewsAggregatorTheme(
+fun WeflutLiveTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {

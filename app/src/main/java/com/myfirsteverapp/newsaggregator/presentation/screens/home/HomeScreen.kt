@@ -89,6 +89,7 @@ fun HomeScreen(
                 // Content
                 when {
                     uiState.isLoading && uiState.articles.isEmpty() -> {
+                        // Initial load - show full screen loading
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -97,6 +98,7 @@ fun HomeScreen(
                         }
                     }
                     uiState.error != null && uiState.articles.isEmpty() -> {
+                        // Error with no articles - show error state
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -118,10 +120,28 @@ fun HomeScreen(
                         }
                     }
                     else -> {
+                        // Show articles (even if loading in background)
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(vertical = 8.dp)
                         ) {
+                            // Show loading indicator at top if refreshing with existing articles
+                            if (uiState.isLoading && uiState.articles.isNotEmpty()) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                }
+                            }
+                            
                             items(
                                 items = uiState.articles,
                                 key = { it.id ?: it.url } // Use url as fallback if id is null

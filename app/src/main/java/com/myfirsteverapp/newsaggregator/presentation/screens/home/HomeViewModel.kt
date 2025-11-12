@@ -48,55 +48,82 @@ class HomeViewModel @Inject constructor(
                 else -> category.name.lowercase()
             }
 
-            newsRepository.getTopHeadlines(categoryParam).collect { resource ->
-                Log.d(TAG, "📦 Resource received: ${resource::class.simpleName}")
+            // Optimize: Only show loading if we don't have articles already (for better UX)
+            val currentArticles = _uiState.value.articles
+            if (currentArticles.isEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = true,
+                        error = null,
+                        isRefreshing = false
+                    )
+                }
+            }
 
-                when (resource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "⏳ Loading state")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = true,
-                                error = null,
-                                isRefreshing = false
-                            )
+            try {
+                newsRepository.getTopHeadlines(categoryParam).collect { resource ->
+                    Log.d(TAG, "📦 Resource received: ${resource::class.simpleName}")
+
+                    when (resource) {
+                        is Resource.Loading -> {
+                            Log.d(TAG, "⏳ Loading state")
+                            // Only update loading state if we don't have cached articles
+                            if (currentArticles.isEmpty()) {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = true,
+                                        error = null,
+                                        isRefreshing = false
+                                    )
+                                }
+                            }
+                        }
+                        is Resource.Success -> {
+                            val articleCount = resource.data?.size ?: 0
+                            Log.d(TAG, "✅ Success! Articles received: $articleCount")
+
+                            if (articleCount > 0) {
+                                Log.d(TAG, "📰 First article: ${resource.data?.first()?.title}")
+                            } else {
+                                Log.w(TAG, "⚠️ Success but 0 articles received!")
+                            }
+
+                            _uiState.update {
+                                it.copy(
+                                    articles = resource.data ?: emptyList(),
+                                    isLoading = false,
+                                    error = null,
+                                    isRefreshing = false,
+                                    selectedCategory = category
+                                )
+                            }
+
+                            Log.d(TAG, "📊 UI State updated - articles in state: ${_uiState.value.articles.size}")
+                        }
+                        is Resource.Error -> {
+                            Log.e(TAG, "❌ Error: ${resource.message}")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = resource.message,
+                                    isRefreshing = false
+                                )
+                            }
+                        }
+                        else -> {
+                            // Handle any other possible states
+                            Log.w(TAG, "❓ Unknown resource state: $resource")
                         }
                     }
-                    is Resource.Success -> {
-                        val articleCount = resource.data?.size ?: 0
-                        Log.d(TAG, "✅ Success! Articles received: $articleCount")
-
-                        if (articleCount > 0) {
-                            Log.d(TAG, "📰 First article: ${resource.data?.first()?.title}")
-                        } else {
-                            Log.w(TAG, "⚠️ Success but 0 articles received!")
-                        }
-
-                        _uiState.update {
-                            it.copy(
-                                articles = resource.data ?: emptyList(),
-                                isLoading = false,
-                                error = null,
-                                isRefreshing = false
-                            )
-                        }
-
-                        Log.d(TAG, "📊 UI State updated - articles in state: ${_uiState.value.articles.size}")
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "❌ Error: ${resource.message}")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                error = resource.message,
-                                isRefreshing = false
-                            )
-                        }
-                    }
-                    else -> {
-                        // Handle any other possible states
-                        Log.w(TAG, "❓ Unknown resource state: $resource")
-                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "💥 Exception in loadNews: ${e.message}", e)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.localizedMessage ?: "Failed to load news",
+                        isRefreshing = false
+                    )
                 }
             }
         }

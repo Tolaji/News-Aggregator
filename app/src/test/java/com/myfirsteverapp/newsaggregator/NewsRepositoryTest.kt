@@ -1,6 +1,9 @@
 package com.myfirsteverapp.newsaggregator
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.myfirsteverapp.newsaggregator.data.remote.api.NewsApiService
 import com.myfirsteverapp.newsaggregator.data.remote.dto.ArticleDto
@@ -14,26 +17,29 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 
 /**
- * FIXED: Updated to match actual implementation
- * - Uses NewsRepositoryImpl instead of non-existent NewsRepository class
- * - Uses correct method names from the interface
- * - Fixed parameter name: urlToImage instead of imageUrl
- * - Properly mocks Firebase dependencies
+ * Fixed unit tests with proper Firebase mocking
  */
 class NewsRepositoryTest {
 
-    private val newsApi: NewsApiService = mock()
-    private val firestore: FirebaseFirestore = mock()
-    private val auth: FirebaseAuth = mock()
+    private lateinit var newsApi: NewsApiService
+    private lateinit var firestore: FirebaseFirestore
+    private lateinit var auth: FirebaseAuth
+    private lateinit var mockUser: FirebaseUser
     private lateinit var repository: NewsRepositoryImpl
 
     @Before
     fun setup() {
+        newsApi = mock()
+        firestore = mock()
+        auth = mock()
+        mockUser = mock()
+
+        // Mock Firebase Auth to return null user (not authenticated)
+        whenever(auth.currentUser).thenReturn(null)
+
         repository = NewsRepositoryImpl(newsApi, firestore, auth)
     }
 
@@ -50,19 +56,21 @@ class NewsRepositoryTest {
                     title = "Test Title",
                     description = "Test Description",
                     url = "https://test.com",
-                    urlToImage = "https://test.com/image.jpg", // FIXED: was imageUrl
+                    urlToImage = "https://test.com/image.jpg",
                     publishedAt = "2024-01-01T00:00:00Z",
                     content = "Test Content"
                 )
             )
         )
 
-        whenever(newsApi.getTopHeadlines(
-            country = any(),
-            category = any(),
-            pageSize = any(),
-            page = any()
-        )).thenReturn(mockResponse)
+        whenever(
+            newsApi.getTopHeadlines(
+                country = any(),
+                category = any(),
+                pageSize = any(),
+                page = any()
+            )
+        ).thenReturn(mockResponse)
 
         // When
         val result = repository.getTopHeadlines(category = null).first()
@@ -87,20 +95,22 @@ class NewsRepositoryTest {
                     title = "Search Result",
                     description = "Search description",
                     url = "https://test.com/search",
-                    urlToImage = "https://test.com/search.jpg", // FIXED: was imageUrl
+                    urlToImage = "https://test.com/search.jpg",
                     publishedAt = "2024-01-01T00:00:00Z",
                     content = "Search content"
                 )
             )
         )
 
-        whenever(newsApi.searchNews(
-            query = any(),
-            sortBy = any(),
-            pageSize = any(),
-            page = any(),
-            language = any()
-        )).thenReturn(mockResponse)
+        whenever(
+            newsApi.searchNews(
+                query = any(),
+                sortBy = any(),
+                pageSize = any(),
+                page = any(),
+                language = any()
+            )
+        ).thenReturn(mockResponse)
 
         // When
         val result = repository.searchNews("test query").first()
@@ -115,12 +125,14 @@ class NewsRepositoryTest {
     @Test
     fun `getTopHeadlines returns error on exception`() = runTest {
         // Given
-        whenever(newsApi.getTopHeadlines(
-            country = any(),
-            category = any(),
-            pageSize = any(),
-            page = any()
-        )).thenThrow(RuntimeException("Network error"))
+        whenever(
+            newsApi.getTopHeadlines(
+                country = any(),
+                category = any(),
+                pageSize = any(),
+                page = any()
+            )
+        ).thenThrow(RuntimeException("Network error"))
 
         // When
         val result = repository.getTopHeadlines(category = null).first()
@@ -161,12 +173,14 @@ class NewsRepositoryTest {
             )
         )
 
-        whenever(newsApi.getTopHeadlines(
-            country = any(),
-            category = any(),
-            pageSize = any(),
-            page = any()
-        )).thenReturn(mockResponse)
+        whenever(
+            newsApi.getTopHeadlines(
+                country = any(),
+                category = any(),
+                pageSize = any(),
+                page = any()
+            )
+        ).thenReturn(mockResponse)
 
         // When
         val result = repository.getTopHeadlines(category = null).first()
@@ -174,7 +188,7 @@ class NewsRepositoryTest {
         // Then - should only return the valid article
         assertTrue(result is Resource.Success)
         val articles = (result as Resource.Success).data
-        assertEquals(1, articles?.size) // Only 1 valid article
+        assertEquals(1, articles?.size)
         assertEquals("Valid Title", articles?.first()?.title)
     }
 
@@ -187,13 +201,15 @@ class NewsRepositoryTest {
             articles = emptyList()
         )
 
-        whenever(newsApi.searchNews(
-            query = any(),
-            sortBy = any(),
-            pageSize = any(),
-            page = any(),
-            language = any()
-        )).thenReturn(mockResponse)
+        whenever(
+            newsApi.searchNews(
+                query = any(),
+                sortBy = any(),
+                pageSize = any(),
+                page = any(),
+                language = any()
+            )
+        ).thenReturn(mockResponse)
 
         // When
         val result = repository.searchNews("").first()

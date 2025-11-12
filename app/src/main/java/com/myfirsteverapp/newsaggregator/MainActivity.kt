@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.myfirsteverapp.newsaggregator.presentation.navigation.NavGraph
 import com.myfirsteverapp.newsaggregator.presentation.navigation.Screen
-import com.myfirsteverapp.newsaggregator.ui.theme.NewsAggregatorTheme
+import com.myfirsteverapp.newsaggregator.ui.theme.WeflutLiveTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            NewsAggregatorTheme {
+            WeflutLiveTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
