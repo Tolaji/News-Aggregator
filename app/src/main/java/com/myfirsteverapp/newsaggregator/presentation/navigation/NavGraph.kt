@@ -159,29 +159,22 @@ fun NavGraph(
         composable(
             route = Screen.ArticleWebView.route,
             arguments = listOf(
-                navArgument("articleUrl") {
-                    type = NavType.StringType
-                }
+                navArgument("articleUrl") { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            val context = LocalContext.current  // ← Read in composition
             val articleUrl = backStackEntry.arguments?.getString("articleUrl")
                 ?.let { Uri.decode(it) } ?: ""
 
             if (articleUrl.isEmpty()) {
                 LaunchedEffect(Unit) {
-                    Toast.makeText(
-                        LocalContext.current,
-                        "Invalid article URL",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(context, "Invalid article URL", Toast.LENGTH_SHORT).show()
                     navController.popBackStack()
                 }
             } else {
                 ArticleWebViewScreen(
                     url = articleUrl,
-                    onBackClick = {
-                        navController.popBackStack()
-                    }
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
