@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -44,9 +44,7 @@ fun MainScreen(
         { route: String ->
             runCatching {
                 navController.navigate(route) {
-                    popUpTo(BottomNavItem.Home.route) {
-                        saveState = true
-                    }
+                    popUpTo(BottomNavItem.Home.route) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
                 }
@@ -104,7 +102,9 @@ fun MainScreen(
             }
 
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen(onLogout = onLogout)
+                ProfileScreen(
+                    onLogout = onLogout
+                )
             }
         }
     }

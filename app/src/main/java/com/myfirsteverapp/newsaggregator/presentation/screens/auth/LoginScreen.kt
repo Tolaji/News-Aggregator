@@ -52,7 +52,7 @@ fun LoginScreen(
         ) {
             // Weflut Logo
             Image(
-                painter = painterResource(id = R.drawable.logo_weflut),
+                painter = painterResource(id = R.drawable.weflut),
                 contentDescription = "Weflut Logo",
                 modifier = Modifier
                     .size(120.dp)
